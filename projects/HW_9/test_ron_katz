@@ -1,0 +1,178 @@
+''' Exercise #9. Python for Engineers.'''
+
+import numpy as np
+import matplotlib.pyplot as plt
+import imageio
+
+#########################################
+# Question 1 - do not delete this comment
+#########################################
+
+class Roman():
+
+    def get_int_from_roman(self):
+        rom_val = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}
+        roman_string = self.roman_value.strip('-')
+        int_val = 0
+        for counter in range(len(roman_string)):
+            if counter > 0 and rom_val[roman_string[counter]] > rom_val[roman_string[counter - 1]]:
+                int_val += rom_val[roman_string[counter]] - 2 * rom_val[roman_string[counter - 1]]
+            else:
+                int_val += rom_val[roman_string[counter]]
+        int_val = -int_val if self.is_neg else int_val
+        return int_val
+
+    def get_roman_from_int(self):
+        num = self.int_value if not self.is_neg else -self.int_value
+        roman_num = '' if not self.is_neg else '-'
+        counter = 0
+        roman_char = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
+        int_vals = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
+        while num > 0:
+            for _ in range(num // int_vals[counter]):
+                roman_num += roman_char[counter]
+                num -= int_vals[counter]
+            counter += 1
+        return roman_num
+
+    def __init__(self, input_value):
+        if type(input_value) == int:
+            self.is_neg = input_value < 0
+            self.int_value = input_value
+            self.roman_value = self.get_roman_from_int()
+        if type(input_value) == str:
+            self.is_neg = input_value.startswith('-')
+            self.roman_value = input_value
+            self.int_value = self.get_int_from_roman()
+
+    def __str__(self):
+        return f"The integer value is {self.int_value} and the Roman Numeral is denoted by '{self.roman_value}'"
+
+    def __repr__(self):
+        return self.roman_value
+
+    def __neg__(self):
+        if self.roman_value.startswith('-') == True:
+            return Roman(-self.int_value)
+        return Roman('-' + self.roman_value)
+
+    def __add__(self, other):
+        if type(other) == Roman:
+            if self.int_value + other.int_value != 0:
+                return Roman(self.int_value + other.int_value)
+            raise ValueError("Roman doesn't use 0")
+        if self.int_value + other != 0:
+            return Roman(self.int_value + other)
+        raise ValueError("Roman doesn't use 0")
+
+    def __lt__(self, other):
+        if self.int_value < other:
+            return True
+        return False
+
+    def __gt__(self, other):
+        if self.int_value > other:
+            return True
+        return False
+
+    def __floordiv__(self, other):
+        if type(other) == Roman:
+            if self.int_value // other.int_value!= 0:
+                return Roman(self.int_value // other.int_value)
+            raise ValueError("Roman doesn't use 0!!!!")
+        if self.int_value // other != 0:
+            return Roman(self.int_value // other)
+        raise ValueError("Roman doesn't use 0!!!!")
+
+
+#########################################
+# Question 2 - do not delete this comment
+#########################################
+
+def load_training_data(filename):
+    with open(filename) as w:
+        all_lines = w.readlines()
+    data_dict = {}
+    datA = [line[:-1].split(',') for line in all_lines[1:]]
+    data_dict["data"] = np.array([np.array(line[1:], dtype=np.float64) for line in datA], dtype=np.float64)
+    data_dict["row_names"] = np.array([line[0] for line in datA])
+    data_dict["column_names"] = np.array(all_lines[0][1:-1].split(','))
+    return data_dict
+
+
+def get_highest_weight_loss_trainee(data_dict):
+    weights1 = data_dict["data"][:, 0].astype(np.float)
+    weights2 = data_dict["data"][:, -1].astype(np.float)
+    weights_loss = np.subtract(weights1, weights2)
+    max_loss = np.argmax(weights_loss)
+    max_loss_name = data_dict["row_names"][max_loss]
+    return max_loss_name
+
+
+def get_diff_data(data_dict):
+    weights = data_dict["data"].astype(np.float)
+    weights1 = weights[0:, 0:-1]
+    weights2 = weights[0:, 1:]
+    weights_diff = weights2 - weights1
+    return weights_diff
+
+
+def get_highest_loss_month(data_dict):
+    weight_diffs = get_diff_data(data_dict)
+    weight_sums = weight_diffs.sum(axis=0)
+    max_sum = np.argmin(weight_sums)
+    month_list = data_dict["column_names"][1:]
+    hi_mon_lost = month_list[max_sum]
+    return hi_mon_lost
+
+
+def get_relative_diff_table(data_dict):
+    weight_diffs = get_diff_data(data_dict)
+    first_weights = data_dict["data"][0:, 0:-1].astype(np.float)
+    relative_weights = weight_diffs / first_weights
+    return relative_weights
+
+
+#########################################
+# Question 3 - do not delete this comment
+#########################################
+
+def compute_entropy(img):
+    im = imageio.imread(img)
+    im = np.array(im)
+    s_total = 0
+    for i in range(0, 256):
+        if list(im.flatten()).count(i)!=0:
+            s = (-list(im.flatten()).count(i) / im.size) * np.log2(list(im.flatten()).count(i) / im.size)
+        else:
+            s = 0
+        s_total += s
+    return s_total
+
+
+
+def nearest_enlarge(img, a):
+    im = imageio.imread(img)
+    row_len = im.shape[0]
+    col_len = im.shape[1]
+    bigger_im = np.zeros((row_len * a, col_len * a))
+    for row in range(row_len * a):
+        for col in range(col_len * a):
+            bigger_im[row, col] = im[int(np.floor(row/a))][int(np.floor(col/a))]
+    return bigger_im
+
+
+
+if __name__ == '__main__':
+    print(Roman(2))
+    print(repr(Roman(2)))
+    print(-Roman("IV"))
+    r = Roman(2) + 3
+    print(repr(r))
+
+
+
+
+
+
+
